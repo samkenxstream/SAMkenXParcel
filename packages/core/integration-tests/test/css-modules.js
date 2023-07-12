@@ -410,6 +410,7 @@ describe('css modules', () => {
                 language: 'js',
                 codeHighlights: [
                   {
+                    message: undefined,
                     end: {
                       column: 45,
                       line: 7,
@@ -690,6 +691,62 @@ describe('css modules', () => {
     );
     assert.deepEqual(res, [
       ['mainJs', '_1ZEqVW_myClass', 'j1UkRG_myOtherClass'],
+    ]);
+  });
+
+  it('should bundle css modules siblings together and their JS assets', async function () {
+    // This issue was first documented here
+    // https://github.com/parcel-bundler/parcel/issues/8716
+    let b = await bundle(
+      path.join(
+        __dirname,
+        '/integration/css-modules-merging-siblings/index.html',
+      ),
+    );
+    let res = [];
+    await runBundle(
+      b,
+      b.getBundles().find(b => b.name === 'index.html'),
+      {
+        sideEffect: s => res.push(s),
+      },
+    );
+    // Result is  [ 'mainJs', 'SX8vmq_container YpGmra_-expand' ]
+    assert.deepEqual(res[0][0], 'mainJs');
+    assert(res[0][1].includes('container') && res[0][1].includes('expand'));
+  });
+
+  it('should allow css modules to be shared between targets', async function () {
+    let b = await bundle([
+      path.join(__dirname, '/integration/css-module-self-references/a'),
+      path.join(__dirname, '/integration/css-module-self-references/b'),
+    ]);
+
+    assertBundles(b, [
+      {
+        name: 'main.css',
+        assets: ['bar.module.css'],
+      },
+      {
+        name: 'main.css',
+        assets: ['bar.module.css'],
+      },
+      {
+        name: 'main.js',
+        assets: ['index.js', 'bar.module.css'],
+      },
+      {
+        name: 'main.js',
+        assets: ['index.js', 'bar.module.css'],
+      },
+      {
+        name: 'module.js',
+        assets: ['index.js', 'bar.module.css'],
+      },
+      {
+        name: 'module.js',
+        assets: ['index.js', 'bar.module.css'],
+      },
     ]);
   });
 });

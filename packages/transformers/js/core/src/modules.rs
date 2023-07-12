@@ -189,7 +189,7 @@ impl ESMFold {
           })
         } else {
           Expr::Arrow(ArrowExpr {
-            body: BlockStmtOrExpr::Expr(Box::new(local)),
+            body: Box::new(BlockStmtOrExpr::Expr(Box::new(local))),
             is_async: false,
             is_generator: false,
             params: vec![],
@@ -460,20 +460,16 @@ impl Fold for ESMFold {
                       declare: false,
                       function: func.function.clone(),
                     }))));
-                    items.push(self.create_exports_assign(
-                      "default".into(),
-                      Expr::Ident(ident.clone()),
-                      DUMMY_SP,
-                    ));
+                    self.create_export("default".into(), Expr::Ident(ident.clone()), DUMMY_SP);
                   } else {
-                    items.push(self.create_exports_assign(
+                    self.create_export(
                       "default".into(),
                       Expr::Fn(FnExpr {
                         ident: None,
                         function: func.function.clone(),
                       }),
                       export.span,
-                    ));
+                    );
                   }
                 }
                 _ => {
